@@ -1,9 +1,8 @@
-import axios from "axios";
-
 export const generateResponse = async () => {
+  // 🔥 Render-safe demo response (NO Ollama)
   return `
 Overview:
-This is a demo overview
+This is a demo overview.
 
 Key Insights:
 - Insight 1
@@ -17,13 +16,4 @@ Clinical Trials:
 Sources:
 - Paper 1 (2023)
 `;
-};
-
-  const res = await axios.post("http://localhost:11434/api/generate", {
-    model: "tinyllama",
-    prompt,
-    stream: false,
-  });
-
-  return res.data.response;
 };
