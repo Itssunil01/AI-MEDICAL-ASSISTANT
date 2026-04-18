@@ -8,9 +8,9 @@ dotenv.config();
 
 const app = express();
 
-// mongoose.connect(process.env.MONGO_URL)
-//   .then(() => console.log("MongoDB connected"))
-//   .catch(err => console.log("MongoDB error", err));
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.log("MongoDB error", err));
 
 app.use(cors({
   origin: "*"
