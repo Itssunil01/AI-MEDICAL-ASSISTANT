@@ -101,7 +101,7 @@ const ChatBox = () => {
 
       {/* Sidebar */}
       <div className="w-1/5 bg-gray-900 text-white p-4">
-        <h2 className="text-lg font-bold mb-4">Chats</h2>
+        <h2 className="text-lg font-bold mb-4">CuraLink</h2>
 
         {/* New Chat */}
         <button
