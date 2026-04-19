@@ -3,7 +3,7 @@ import OpenAI from "openai";
 console.log("API KEY:", process.env.GROQ_API_KEY);
 
 const client = new OpenAI({
-  apiKey: "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",
+  apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1",
 });
 
