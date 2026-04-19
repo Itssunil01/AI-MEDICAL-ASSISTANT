@@ -7,19 +7,17 @@ const ChatBox = () => {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Thinking...");
 
-  //  chats (full persistent system)
   const [chats, setChats] = useState(() => {
     return JSON.parse(localStorage.getItem("chats")) || [];
   });
 
   const [currentChatId, setCurrentChatId] = useState(null);
 
-  //  save chats
   useEffect(() => {
     localStorage.setItem("chats", JSON.stringify(chats));
   }, [chats]);
 
-  //  loading animation cycle
+  // 🔄 Loading animation
   useEffect(() => {
     if (!loading) return;
 
@@ -39,71 +37,91 @@ const ChatBox = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
-  //  get current chat
-  const currentChat = chats.find(c => c.id === currentChatId);
+  const currentChat = chats.find((c) => c.id === currentChatId);
 
-  //  format AI response
+  // 🧠 SMART PARSER (ROBUST)
   const formatResponse = (text) => {
-    const lines = text.split("\n").filter(l => l.trim() !== "");
-
-    return {
-      overview: lines.slice(0, 2).join("\n"),
-      insights: lines.slice(2, 6),
+    const sections = {
+      about: "",
+      causes: [],
+      prevention: [],
     };
+
+    let current = "";
+
+    text.split("\n").forEach((line) => {
+      const l = line.toLowerCase().trim();
+
+      if (l.includes("about")) current = "about";
+      else if (l.includes("cause")) current = "causes";
+      else if (l.includes("prevention")) current = "prevention";
+      else {
+        if (!line.trim()) return;
+
+        if (current === "about") sections.about += line + " ";
+        else if (current === "causes")
+          sections.causes.push(line.replace("- ", ""));
+        else if (current === "prevention")
+          sections.prevention.push(line.replace("- ", ""));
+      }
+    });
+
+    return sections;
   };
 
-  //  send query
+  // 📤 SEND QUERY
   const sendQuery = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
 
-    const res = await axios.post("https://ai-medical-assistant-7jb2.onrender.com/api/query", {
-      disease: "lung cancer",
-      query,
-    });
-
-    const newMessage = {
-      user: query,
-      bot: res.data.aiResponse,
-      papers: res.data.papers,
-      trials: res.data.trials,
-    };
-
-    let updatedChats;
-
-    if (currentChatId) {
-      // existing chat
-      updatedChats = chats.map(chat =>
-        chat.id === currentChatId
-          ? { ...chat, messages: [...chat.messages, newMessage] }
-          : chat
+    try {
+      const res = await axios.post(
+        "https://ai-medical-assistant-7jb2.onrender.com/api/query",
+        { query }
       );
-    } else {
-      // new chat
-      const newChat = {
-        id: Date.now(),
-        title: query,
-        messages: [newMessage],
+
+      const newMessage = {
+        user: query,
+        bot: res.data.aiResponse,
+        papers: res.data.papers,
+        trials: res.data.trials,
       };
 
-      updatedChats = [...chats, newChat];
-      setCurrentChatId(newChat.id);
+      let updatedChats;
+
+      if (currentChatId) {
+        updatedChats = chats.map((chat) =>
+          chat.id === currentChatId
+            ? { ...chat, messages: [...chat.messages, newMessage] }
+            : chat
+        );
+      } else {
+        const newChat = {
+          id: Date.now(),
+          title: query,
+          messages: [newMessage],
+        };
+
+        updatedChats = [...chats, newChat];
+        setCurrentChatId(newChat.id);
+      }
+
+      setChats(updatedChats);
+      setQuery("");
+    } catch (err) {
+      console.error(err);
     }
 
-    setChats(updatedChats);
-    setQuery("");
     setLoading(false);
   };
 
   return (
     <div className="flex h-screen">
-
       {/* Sidebar */}
       <div className="w-1/5 bg-gray-900 text-white p-4">
         <h2 className="text-lg font-bold mb-4">CuraLink</h2>
 
-        {/* New Chat */}
         <button
           onClick={() => setCurrentChatId(null)}
           className="bg-blue-600 w-full p-2 rounded mb-2"
@@ -111,7 +129,6 @@ const ChatBox = () => {
           + New Chat
         </button>
 
-        {/* Clear All */}
         <button
           onClick={() => {
             setChats([]);
@@ -123,8 +140,7 @@ const ChatBox = () => {
           🗑 Clear All
         </button>
 
-        {/* Chat list */}
-        {chats.map(chat => (
+        {chats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => setCurrentChatId(chat.id)}
@@ -135,14 +151,11 @@ const ChatBox = () => {
         ))}
       </div>
 
-      {/* Chat Area */}
+      {/* Chat */}
       <div className="w-4/5 flex flex-col">
-
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-
           <h1 className="text-2xl font-bold mb-6 text-center">
-             AI Medical Assistant
+            AI Medical Assistant
           </h1>
 
           {currentChat?.messages.map((msg, i) => {
@@ -150,8 +163,7 @@ const ChatBox = () => {
 
             return (
               <div key={i} className="mb-6">
-
-                {/* User */}
+                {/* USER */}
                 <div className="flex justify-end">
                   <div className="bg-blue-500 text-white p-2 rounded-lg max-w-md">
                     {msg.user}
@@ -159,58 +171,102 @@ const ChatBox = () => {
                 </div>
 
                 {/* AI */}
-                <div className="bg-white p-4 mt-2 rounded shadow max-w-2xl">
+                <div className="bg-white p-5 mt-2 rounded-xl shadow max-w-3xl">
+                  {/* ABOUT */}
+                  <h3 className="text-blue-600 font-semibold">
+                    🧠 About Disease
+                  </h3>
+                  <p className="mb-3 text-sm">
+                    {data.about || "General medical information about the disease is provided."}
+                  </p>
 
-                  <h3 className="text-blue-600 font-semibold">Overview</h3>
-                  <p className="mb-3">{data.overview}</p>
+                  {/* CAUSES */}
+                  <h3 className="text-red-500 font-semibold">Causes</h3>
+                  {data.causes.length > 0 ? (
+                    <ul className="list-disc pl-5 mb-3 text-sm">
+                      {data.causes.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-400 text-sm mb-3">
+                      Causes data not available
+                    </p>
+                  )}
 
-                  <h3 className="text-blue-600 font-semibold">Insights</h3>
-                  <ul className="list-disc pl-5 mb-3">
-                    {data.insights.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
+                  {/* PREVENTION */}
+                  <h3 className="text-green-600 font-semibold">
+                    Prevention
+                  </h3>
+                  {data.prevention.length > 0 ? (
+                    <ul className="list-disc pl-5 mb-3 text-sm">
+                      {data.prevention.map((p, i) => (
+                        <li key={i}>{p}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-400 text-sm mb-3">
+                      Prevention data not available
+                    </p>
+                  )}
 
-                  <h3 className="text-blue-600 font-semibold">Trials</h3>
-                  <ul className="list-disc pl-5 mb-3">
+                  {/* TRIALS */}
+                  <h3 className="text-purple-600 font-semibold">
+                    Clinical Trials
+                  </h3>
+                  <ul className="list-disc pl-5 mb-3 text-sm">
                     {msg.trials?.map((t, i) => (
                       <li key={i}>{t.title}</li>
                     ))}
                   </ul>
 
-                  <h3 className="text-blue-600 font-semibold">Sources</h3>
-                  <ul className="list-disc pl-5">
+                  {/* PUBLICATIONS */}
+                  <h3 className="text-indigo-600 font-semibold">
+                    Research Publications
+                  </h3>
+                  <ul className="list-disc pl-5 text-sm">
                     {msg.papers?.map((p, i) => (
-                      <li key={i}>{p.title} ({p.year})</li>
+                      <li key={i}>
+                        <a
+                          href={p.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline hover:text-blue-800"
+                        >
+                          {p.title}
+                        </a>{" "}
+                        ({p.year})
+                      </li>
                     ))}
                   </ul>
                 </div>
-                 {/* Copy */}
-                  <button
-                    onClick={() => navigator.clipboard.writeText(msg.bot)}
-                    className="text-xs bg-gray-200 px-2 py-1 rounded mt-2"
-                  >
-                    <ContentCopyIcon />
-                  </button>
+
+                {/* COPY */}
+                <button
+                  onClick={() => navigator.clipboard.writeText(msg.bot)}
+                  className="text-xs bg-gray-200 px-2 py-1 rounded mt-2"
+                >
+                  <ContentCopyIcon />
+                </button>
               </div>
             );
           })}
 
-          {/* Loading */}
+          {/* LOADING */}
           {loading && (
             <div className="bg-white p-3 rounded shadow w-fit">
-               {loadingText}
+              {loadingText}
             </div>
           )}
         </div>
 
-        {/* Input */}
+        {/* INPUT */}
         <div className="p-4 border-t bg-white flex gap-2">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 border p-2 rounded"
-            placeholder="Ask about any disease..."
+            placeholder="Ask about disease (e.g., diabetes causes)"
           />
           <button
             onClick={sendQuery}
@@ -219,7 +275,6 @@ const ChatBox = () => {
             Send
           </button>
         </div>
-
       </div>
     </div>
   );
