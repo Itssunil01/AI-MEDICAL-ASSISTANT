@@ -1,19 +1,57 @@
-export const generateResponse = async () => {
-  // 🔥 Render-safe demo response (NO Ollama)
-  return `
+import axios from "axios";
+
+export const generateResponse = async ({ query, disease, papers, trials }) => {
+  try {
+    // CHECK: are we running locally?
+    if (process.env.NODE_ENV !== "production") {
+      //  LOCAL → USE OLLAMA
+      const prompt = `
+Give:
+- Overview
+- 3 insights
+- 2 clinical trials
+
+Query: ${query}
+Disease: ${disease}
+
+Papers:
+${papers.map(p => p.title).join("\n")}
+
+Trials:
+${trials.map(t => t.title).join("\n")}
+`;
+
+      const res = await axios.post("http://localhost:11434/api/generate", {
+        model: "tinyllama",
+        prompt,
+        stream: false,
+      });
+
+      return res.data.response;
+    }
+
+    //  PRODUCTION (Render/Vercel)
+    return `
 Overview:
-This is a demo overview.
+This system analyzes medical data and provides summarized insights.
 
 Key Insights:
-- Insight 1
-- Insight 2
-- Insight 3
+- AI-based summarization of research papers
+- Integrated clinical trial data
+- Fast and structured medical insights
 
 Clinical Trials:
-- Trial 1
-- Trial 2
+- Trial data available via APIs
+- Real-time research integration
 
 Sources:
-- Paper 1 (2023)
+- OpenAlex API
+- ClinicalTrials.gov
 `;
+
+  } catch (err) {
+    console.error("LLM Error:", err);
+
+    return "Error generating response";
+  }
 };

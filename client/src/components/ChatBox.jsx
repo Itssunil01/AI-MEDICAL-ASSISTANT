@@ -58,7 +58,7 @@ const ChatBox = () => {
 
     setLoading(true);
 
-    const res = await axios.post("http://localhost:5000/api/query", {
+    const res = await axios.post("https://ai-medical-assistant-7jb2.onrender.com/api/query", {
       disease: "lung cancer",
       query,
     });
